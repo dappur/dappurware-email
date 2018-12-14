@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [4.0.3] - 2018-12-13
+### Added
+- [soundasleep/html2text](https://github.com/soundasleep/html2text) was added as a dependency
+
 ## [4.0.1] - 2018-12-13
 ### Changed
 - Removed plain text email generation. This is now done automatically via [soundasleep/html2text](https://github.com/soundasleep/html2text);
