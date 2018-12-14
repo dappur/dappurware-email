@@ -35,7 +35,6 @@ class Email extends Dappurware
             $addTemplate->description = $requestParams['description'];
             $addTemplate->subject = $requestParams['subject'];
             $addTemplate->html = $requestParams['html'];
-            $addTemplate->plain_text = $requestParams['plain_text'];
             if ($requestParams['placeholders']) {
                 $addTemplate->placeholders = json_encode($requestParams['placeholders']);
             }
@@ -62,7 +61,6 @@ class Email extends Dappurware
             $template->description = $requestParams['description'];
             $template->subject = $requestParams['subject'];
             $template->html = $requestParams['html'];
-            $template->plain_text = $requestParams['plain_text'];
             if ($requestParams['placeholders']) {
                 $template->placeholders = json_encode($requestParams['placeholders']);
             }
@@ -113,11 +111,6 @@ class Email extends Dappurware
         }
         if ($slugCheck->first()) {
             $this->container->validator->addError('slug', 'Slug is already in use.');
-        }
-        
-        // Check Plain Text for HTML
-        if (strip_tags($requestParams['plain_text']) != $requestParams['plain_text']) {
-            $this->container->validator->addError('plain_text', 'Plain Text cannot contain HTML.');
         }
 
         // Process Placeholders
@@ -176,7 +169,6 @@ class Email extends Dappurware
             if ($template) {
                 // Get Email Bodies
                 $html = $template->html;
-                $plainText = $template->plain_text;
                 $subject = $template->subject;
                 
                 // Process Custom Placeholders
@@ -206,43 +198,9 @@ class Email extends Dappurware
 
                         $placeholdersTemp = $this->preparePlaceholders($placeholdersTemp);
 
-                        // Process HTML Email
-                        $htmlTemp = new \Twig_Environment(new \Twig_Loader_Array([$template->slug . '_html' => $html]));
-                        $htmlTemp = $htmlTemp->render($template->slug . '_html', $placeholdersTemp);
-
-                        // Process Plain Text Email
-                        $plainTextTemp = new \Twig_Environment(
-                            new \Twig_Loader_Array(
-                                [$template->slug . '_pt' => $plainText]
-                            )
-                        );
-                        $plainTextTemp = $plainTextTemp->render($template->slug . '_pt', $placeholdersTemp);
-
-                        //Process Subject
-                        $subjectTemp = new \Twig_Environment(
-                            new \Twig_Loader_Array(
-                                [$template->slug . '_sub' => $subject]
-                            )
-                        );
-                        $subjectTemp = $subjectTemp->render($template->slug . '_sub', $placeholdersTemp);
-
-                        $send = $this->send(
-                            $userTemp->email,
-                            html_entity_decode($subjectTemp),
-                            $htmlTemp,
-                            $plainTextTemp,
-                            $template->id
-                        );
-
-                        if ($send['result']) {
-                            $output['results']['success'][] = array("email" => $userTemp->email);
-                        }
-                        
-                        if (!$send['result']) {
-                            $output['results']['errors'][] = array(
-                                "email" => $userTemp->email,
-                                "error" => $result['error']
-                            );
+                        $sendEmail = $this->processAndSend($html, $subject, $placeholdersTemp, $userTemp->email, $template->id);
+                        if ($sendEmail['result']) {
+                            $output['status'] = "success";
                         }
                     }
                 }
@@ -252,36 +210,9 @@ class Email extends Dappurware
                     $placeholdersTemp = $this->preparePlaceholders($placeholders);
                     
                     foreach ($recipients['email'] as $evalue) {
-                        // Process HTML Email
-                        $htmlTemp = new \Twig_Environment(new \Twig_Loader_Array([$template->slug . '_html' => $html]));
-                        $htmlTemp = $htmlTemp->render($template->slug . '_html', $placeholdersTemp);
-
-                        // Process Plain Text Email
-                        $plainTextTemp = new \Twig_Environment(new \Twig_Loader_Array(
-                            [$template->slug . '_pt' => $plainText]
-                        ));
-                        $plainTextTemp = $plainTextTemp->render($template->slug . '_pt', $placeholdersTemp);
-
-                        //Process Subject
-                        $subjectTemp = new \Twig_Environment(new \Twig_Loader_Array(
-                            [$template->slug . '_sub' => $subject]
-                        ));
-                        $subjectTemp = $subjectTemp->render($template->slug . '_sub', $placeholdersTemp);
-
-                        $send = $this->send(
-                            $evalue,
-                            html_entity_decode($subjectTemp),
-                            $htmlTemp,
-                            $plainTextTemp,
-                            $template->id
-                        );
-
-                        if ($send['result']) {
-                            $output['results']['success'][] = array("email" => $evalue);
-                        }
-
-                        if (!$send['result']) {
-                            $output['results']['errors'][] = array("email" => $evalue, "error" => $result['error']);
+                        $sendEmail = $this->processAndSend($html, $subject, $placeholdersTemp, $evalue, $template->id);
+                        if ($sendEmail['result']) {
+                            $output['status'] = "success";
                         }
                     }
                 }
@@ -301,7 +232,7 @@ class Email extends Dappurware
         return $output;
     }
 
-    public function sendEmail(array $sendTo, $subject, $html, $plainText)
+    public function sendEmail(array $sendTo, $subject, $html)
     {
         $output = array();
 
@@ -326,26 +257,9 @@ class Email extends Dappurware
 
                     $placeholdersTemp = $this->preparePlaceholders($placeholdersTemp);
 
-                    // Process HTML Email
-                    $htmlTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_html' => $html]));
-                    $htmlTemp = $htmlTemp->render('email_html', $placeholdersTemp);
-
-                    // Process Plain Text Email
-                    $plainTextTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_pt' => $plainText]));
-                    $plainTextTemp = $plainTextTemp->render('email_pt', $placeholdersTemp);
-
-                    //Process Subject
-                    $subjectTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_sub' => $subject]));
-                    $subjectTemp = $subjectTemp->render('email_sub', $placeholdersTemp);
-
-                    $sendEmail = Email::send($userTemp->email, html_entity_decode($subjectTemp), $htmlTemp, $plainTextTemp);
-
-                    if ($sendEmail) {
-                        $output['results']['success'][] = array("email" => $userTemp->email);
-                    }
-
-                    if (!$sendEmail) {
-                        $output['results']['errors'][] = array("email" => $userTemp->email, "error" => $result['error']);
+                    $sendEmail = $this->processAndSend($html, $subject, $placeholdersTemp, $userTemp->email);
+                    if ($sendEmail['result']) {
+                        $output['status'] = "success";
                     }
                 }
             }
@@ -354,25 +268,9 @@ class Email extends Dappurware
             if (!empty($recipients['email'])) {
                 foreach ($recipients['email'] as $evalue) {
                     $placeholdersTemp = $this->preparePlaceholders($placeholders);
-
-                    // Process HTML Email
-                    $htmlTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_html' => $html]));
-                    $htmlTemp = $htmlTemp->render('email_html', $placeholdersTemp);
-
-                    // Process Plain Text Email
-                    $plainTextTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_pt' => $plainText]));
-                    $plainTextTemp = $plainTextTemp->render('email_pt', $placeholdersTemp);
-
-                    //Process Subject
-                    $subjectTemp = new \Twig_Environment(new \Twig_Loader_Array(['email_sub' => $subject]));
-                    $subjectTemp = $subjectTemp->render('email_sub', $placeholdersTemp);
-
-                    $sendEmail = Email::send($evalue, $subjectTemp, $htmlTemp, $plainTextTemp);
-                    if ($sendEmail) {
-                        $output['results']['success'][] = array("email" => $evalue);
-                    }
-                    if (!$sendEmail) {
-                        $output['results']['errors'][] = array("email" => $evalue, "error" => $result['error']);
+                    $sendEmail = $this->processAndSend($html, $subject, $placeholdersTemp, $evalue);
+                    if ($sendEmail['result']) {
+                        $output['status'] = "success";
                     }
                 }
             }
@@ -384,6 +282,23 @@ class Email extends Dappurware
         }
         
         return $output;
+    }
+
+    private function processAndSend($html, $subject, $placeholders, $recipient, $templateId = null){
+        // Process HTML Email
+        $htmlOut = new \Twig_Environment(new \Twig_Loader_Array(['email_html' => $html]));
+        $htmlOut = $htmlOut->render('email_html', $placeholders);
+
+        // Process Plain Text Email
+        $plainTextOut = \Html2Text\Html2Text::convert($htmlOut);
+
+        //Process Subject
+        $subjectOut = new \Twig_Environment(new \Twig_Loader_Array(['email_sub' => $subject]));
+        $subjectOut = $subjectOut->render('email_sub', $placeholders);
+
+        $sendEmail = Email::send($recipient, html_entity_decode($subjectOut), $htmlOut, $plainTextOut, $templateId);
+
+        return $sendEmail;
     }
 
     private function parseRecipients(array $sendTo)
@@ -455,11 +370,11 @@ class Email extends Dappurware
         $mail->Body    = $html;
         $mail->AltBody = $plainText;
 
-        if (!$mail->send()) {
-            $output['result'] = false;
-            $output['error'] = $mail->ErrorInfo;
-            return $output;
-        }
+        // Message ID
+        $messageId = \Ramsey\Uuid\Uuid::uuid4()->toString().'@'.$this->config['domain'];
+        $mail->MessageID = "<" . $messageId .'>';
+
+        $sendEmail = $mail->send();
 
         if ($this->settings['mail']['logging']) {
             //Delete Old Emails
@@ -472,7 +387,7 @@ class Email extends Dappurware
             }
 
             $addEmail = new Emails;
-            $addEmail->secure_id = Uuid::uuid4()->toString();
+            $addEmail->secure_id = $messageId;
             $addEmail->template_id = $templateId;
             $addEmail->send_to = $email;
             $addEmail->subject = $subject;
@@ -482,7 +397,19 @@ class Email extends Dappurware
             if (in_array("plain_text", $this->settings['mail']['log_details'])) {
                 $addEmail->plain_text = $plainText;
             }
+            if (!$sendEmail) {
+                $addEmail->error = $mail->ErrorInfo;
+            }
+            if ($sendEmail) {
+                $addEmail->status = 'sent';
+            }
             $addEmail->save();
+        }
+
+        if (!$sendEmail) {
+            $output['result'] = false;
+            $output['error'] = $mail->ErrorInfo;
+            return $output;
         }
 
         $output['result'] = true;
