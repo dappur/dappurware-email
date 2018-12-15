@@ -2,7 +2,7 @@
     "name": "dappur/dappurware-email",
     "description": "Email support package for the Dappur Framework",
     "keywords": ["dappur", "dappurware", "framework", "email"],
-    "version": "4.0.2",
+    "version": "4.0.3",
     "homepage": "https://github.com/dappur/dappurware-email",
     "license": "MIT",
     "authors": [

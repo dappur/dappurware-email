@@ -397,13 +397,19 @@ class Email extends Dappurware
             if (in_array("plain_text", $this->settings['mail']['log_details'])) {
                 $addEmail->plain_text = $plainText;
             }
+            $addEmail->save();
+
+            $addStatus = new \Dappur\Model\EmailsStatus;
+            $addStatus->email_id = $addEmail->id;
             if (!$sendEmail) {
-                $addEmail->error = $mail->ErrorInfo;
+                $addStatus->status = "error";
+                $addStatus->details = $mail->ErrorInfo;
             }
             if ($sendEmail) {
-                $addEmail->status = 'sent';
+                $addStatus->status = 'sent';
             }
-            $addEmail->save();
+            $addStatus->save();
+
         }
 
         if (!$sendEmail) {
