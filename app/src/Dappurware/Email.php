@@ -3,18 +3,9 @@
 namespace Dappur\Dappurware;
 
 use Carbon\Carbon;
-use Dappur\Model\Users;
-use Dappur\Model\Config;
-use Dappur\Model\ConfigGroups;
-use Dappur\Model\Emails;
-use Dappur\Model\EmailsTemplates;
 use Interop\Container\ContainerInterface;
-use Ramsey\Uuid\Uuid;
 use Respect\Validation\Validator as V;
 
-/**
- * @SuppressWarnings(PHPMD)
- */
 class Email extends Dappurware
 {
     public function __construct(ContainerInterface $container)
@@ -29,7 +20,7 @@ class Email extends Dappurware
         if ($this->validator->isValid()) {
             $requestParams = $this->container->request->getParams();
 
-            $addTemplate = new EmailsTemplates;
+            $addTemplate = new \Dappur\Model\EmailsTemplates;
             $addTemplate->name = $requestParams['name'];
             $addTemplate->slug = $requestParams['slug'];
             $addTemplate->description = $requestParams['description'];
@@ -49,7 +40,8 @@ class Email extends Dappurware
 
     public function updateTemplate($templateId = null)
     {
-        $template = EmailsTemplates::find($templateId);
+        $template = new \Dappur\Model\EmailsTemplates);
+        $template = $template->find($templateId);
 
         $this->validateTemplate($templateId);
 
@@ -105,7 +97,8 @@ class Email extends Dappurware
         );
 
         // Check for Dupe Slug
-        $slugCheck = EmailsTemplates::where('slug', $requestParams['slug']);
+        $slugCheck = new \Dappur\Model\EmailsTemplates;
+        $slugCheck = $slugCheck->where('slug', $requestParams['slug']);
         if ($templateId) {
             $slugCheck = $slugCheck->where('id', '!=', $templateId);
         }
@@ -132,7 +125,7 @@ class Email extends Dappurware
     {
         $output = array();
 
-        $users = Users::first()->toArray();
+        $users = \Dappur\Model\Users::first()->toArray();
 
         foreach (array_keys($users) as $key) {
             if ($key == "password" || $key == "permissions") {
@@ -143,7 +136,7 @@ class Email extends Dappurware
         }
 
         // Only include Site Settings
-        $siteSettings = ConfigGroups::with('config')->find(1);
+        $siteSettings = \Dappur\Model\ConfigGroups::with('config')->find(1);
 
         foreach ($siteSettings->config as $value2) {
             $output[$siteSettings->name][] = array(
@@ -161,7 +154,7 @@ class Email extends Dappurware
 
         $placeholders = $this->getPlaceholders();
 
-        $template = EmailsTemplates::where('slug', '=', $templateSlug)->first();
+        $template = \Dappur\Model\EmailsTemplates::where('slug', '=', $templateSlug)->first();
 
         $recipients = $this->parseRecipients($sendTo);
 
@@ -186,7 +179,7 @@ class Email extends Dappurware
                 if (!empty($recipients['users'])) {
                     foreach ($recipients['users'] as $uvalue) {
                         // Process Bodies with Custom and System Placeholders
-                        $userTemp = Users::find($uvalue);
+                        $userTemp = \Dappur\Model\Users::find($uvalue);
                         $placeholdersTemp = $placeholders;
 
                         if ($userTemp) {
@@ -198,7 +191,13 @@ class Email extends Dappurware
 
                         $placeholdersTemp = $this->preparePlaceholders($placeholdersTemp);
 
-                        $sendEmail = $this->processAndSend($html, $subject, $placeholdersTemp, $userTemp->email, $template->id);
+                        $sendEmail = $this->processAndSend(
+                            $html,
+                            $subject,
+                            $placeholdersTemp,
+                            $userTemp->email,
+                            $template->id
+                        );
                         if ($sendEmail['result']) {
                             $output['status'] = "success";
                         }
@@ -245,7 +244,7 @@ class Email extends Dappurware
             if (!empty($recipients['users'])) {
                 foreach ($recipients['users'] as $uvalue) {
                     // Process Bodies with Custom and System Placeholders
-                    $userTemp = Users::find($uvalue);
+                    $userTemp = \Dappur\Model\Users::find($uvalue);
                     $placeholdersTemp = $placeholders;
 
                     if ($userTemp) {
@@ -284,7 +283,8 @@ class Email extends Dappurware
         return $output;
     }
 
-    private function processAndSend($html, $subject, $placeholders, $recipient, $templateId = null){
+    private function processAndSend($html, $subject, $placeholders, $recipient, $templateId = null)
+    {
         // Process HTML Email
         $htmlOut = new \Twig_Environment(new \Twig_Loader_Array(['email_html' => $html]));
         $htmlOut = $htmlOut->render('email_html', $placeholders);
@@ -379,14 +379,14 @@ class Email extends Dappurware
         if ($this->settings['mail']['logging']) {
             //Delete Old Emails
             if ($this->settings['mail']['log_retention']) {
-                Emails::where(
+                \Dappur\Model\Emails::where(
                     'created_at',
                     '<',
                     Carbon::now()->subDays($this->settings['mail']['log_retention'])
                 )->delete();
             }
 
-            $addEmail = new Emails;
+            $addEmail = new \Dappur\Model\Emails;
             $addEmail->secure_id = $messageId;
             $addEmail->template_id = $templateId;
             $addEmail->send_to = $email;
@@ -409,7 +409,6 @@ class Email extends Dappurware
                 $addStatus->status = 'sent';
             }
             $addStatus->save();
-
         }
 
         if (!$sendEmail) {
