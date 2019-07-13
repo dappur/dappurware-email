@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+- No changes
+
+## [4.0.4]
 ### Changed
 - Code Cleanup
 
@@ -26,7 +29,8 @@
 ### Notes
 I am seperating the larger dapurware classes into their own packages as I would liek to develop them out a little more.
 
-[Unreleased]: https://github.com/dappur/dappurware-email/compare/v4.0.3...HEAD
+[Unreleased]: https://github.com/dappur/dappurware-email/compare/v4.0.4...HEAD
+[4.0.4]: https://github.com/dappur/dappurware-email/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/dappur/dappurware-email/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/dappur/dappurware-email/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/dappur/dappurware-email/compare/v4.0.0...v4.0.1
