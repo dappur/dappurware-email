@@ -40,7 +40,7 @@ class Email extends Dappurware
 
     public function updateTemplate($templateId = null)
     {
-        $template = new \Dappur\Model\EmailsTemplates);
+        $template = new \Dappur\Model\EmailsTemplates;
         $template = $template->find($templateId);
 
         $this->validateTemplate($templateId);
@@ -179,7 +179,8 @@ class Email extends Dappurware
                 if (!empty($recipients['users'])) {
                     foreach ($recipients['users'] as $uvalue) {
                         // Process Bodies with Custom and System Placeholders
-                        $userTemp = \Dappur\Model\Users::find($uvalue);
+                        $userTemp = new \Dappur\Model\Users;
+                        $userTemp = $userTemp->find($uvalue);
                         $placeholdersTemp = $placeholders;
 
                         if ($userTemp) {
@@ -235,16 +236,16 @@ class Email extends Dappurware
     {
         $output = array();
 
-        $placeholders = Email::getPlaceholders();
-
-        $recipients = Email::parseRecipients($sendTo);
+        $placeholders = $this->getPlaceholders();
+        $recipients = $this->parseRecipients($sendTo);
 
         if (!empty($recipients)) {
             // Send Email To Users
             if (!empty($recipients['users'])) {
                 foreach ($recipients['users'] as $uvalue) {
                     // Process Bodies with Custom and System Placeholders
-                    $userTemp = \Dappur\Model\Users::find($uvalue);
+                    $userTemp = new \Dappur\Model\Users;
+                    $userTemp = $userTemp->find($uvalue);
                     $placeholdersTemp = $placeholders;
 
                     if ($userTemp) {
@@ -290,13 +291,14 @@ class Email extends Dappurware
         $htmlOut = $htmlOut->render('email_html', $placeholders);
 
         // Process Plain Text Email
-        $plainTextOut = \Html2Text\Html2Text::convert($htmlOut);
+        $html2Text = new \Html2Text\Html2Text;
+        $plainTextOut = $html2Text->convert($htmlOut);
 
         //Process Subject
         $subjectOut = new \Twig_Environment(new \Twig_Loader_Array(['email_sub' => $subject]));
         $subjectOut = $subjectOut->render('email_sub', $placeholders);
 
-        $sendEmail = Email::send($recipient, html_entity_decode($subjectOut), $htmlOut, $plainTextOut, $templateId);
+        $sendEmail = $this->send($recipient, html_entity_decode($subjectOut), $htmlOut, $plainTextOut, $templateId);
 
         return $sendEmail;
     }
