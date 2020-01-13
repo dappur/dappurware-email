@@ -3,7 +3,7 @@
 namespace Dappur\Dappurware;
 
 use Carbon\Carbon;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Respect\Validation\Validator as V;
 
 class Email extends Dappurware
