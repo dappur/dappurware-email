@@ -38,7 +38,8 @@
 ### Notes
 I am seperating the larger dapurware classes into their own packages as I would liek to develop them out a little more.
 
-[Unreleased]: https://github.com/dappur/dappurware-email/compare/v4.0.5...HEAD
+[Unreleased]: https://github.com/dappur/dappurware-email/compare/v4.0.6...HEAD
+[4.0.6]: https://github.com/dappur/dappurware-email/compare/v4.0.5...v4.0.6
 [4.0.5]: https://github.com/dappur/dappurware-email/compare/v4.0.4...v4.0.5
 [4.0.4]: https://github.com/dappur/dappurware-email/compare/v4.0.3...v4.0.4
 [4.0.3]: https://github.com/dappur/dappurware-email/compare/v4.0.2...v4.0.3
