@@ -3,6 +3,10 @@
 ## [Unreleased]
 ### No Changes
 
+## [4.0.6] - 2020-01-13
+### Fixed
+- Migrated from interop to psr for container
+
 ## [4.0.5] - 2019-07-14
 ### Fixed
 - Class Error
